@@ -1,6 +1,6 @@
 {
-  "name": "wikipediaapi",
-  "version": "1.0.0",
+  "name": "@g-nogueira/wikipediaapi",
+  "version": "1.0.3",
   "description": "",
   "main": "WikipediaAPI.js",
   "scripts": {

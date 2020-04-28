@@ -89,7 +89,7 @@ module.exports = new (class WikipediaAPI {
 		return new Promise(resolve => {
 
 			var request = this.request;
-			var url = this.buildUrl({
+			var url = this._buildUrl({
 				language: language || request.language.english,
 				titles: [title],
 				action: request.action.query,
@@ -123,10 +123,10 @@ module.exports = new (class WikipediaAPI {
 	 */
 	searchTitle(title, language, thumbnailSize) {
 
-		return new Promise(async resolve => {
+		return new Promise((resolve, reject) => {
 
 			var request = this.request;
-			var url = this.buildUrl({
+			var url = this._buildUrl({
 				language: language || request.language.english,
 				titles: [title],
 				action: request.action.query,
@@ -152,7 +152,7 @@ module.exports = new (class WikipediaAPI {
 				let pages = find("pages", response);
 				resolve(pages[0]);
 
-			}).catch(error => resolve(error));
+			}).catch(reject);
 
 		});
 	}
@@ -165,12 +165,11 @@ module.exports = new (class WikipediaAPI {
 	 * @returns {Promise<Object>} Returns a promise that resolves to an object.
 	 */
 	getPageById(pageId, language, thumbnailSize = 250) {
-		return new Promise(resolve => {
+		return new Promise((resolve, reject) => {
 
 			var request = this.request;
-			var url = this.buildUrl({
+			var url = this._buildUrl({
 				language: language || request.language.english,
-				titles: [title],
 				action: request.action.query,
 				prop: [
 					request.prop.pageimages,
@@ -198,7 +197,7 @@ module.exports = new (class WikipediaAPI {
 				let pages = find("pages", response);
 				resolve(pages[0]);
 
-			}).catch(error => resolve(error));
+			}).catch(reject);
 		});
 	}
 
@@ -210,11 +209,13 @@ module.exports = new (class WikipediaAPI {
 	 * @returns {Promise<Object>} Returns a promise that resolves to an object.
 	 */
 	searchResults(title, language, thumbnailSize = 70, includeDisambiguation = false) {
-		return new Promise(async resolve => {
+		return new Promise((resolve, reject) => {
 
 			var request = this.request;
-			var url = this.buildUrl({
-				language: language || request.language.english,
+			var lang = language || request.language.english;
+
+			var url = this._buildUrl({
+				language: lang,
 				action: request.action.query,
 				prop: [
 					request.prop.pageimages,
@@ -251,11 +252,13 @@ module.exports = new (class WikipediaAPI {
 					});
 				}
 
+
+				data.forEach(el => { el.lang = lang });
 				data.sort((elA, elB) => elA.index - elB.index);
 
 				resolve(data);
 
-			}).catch(error => resolve(error));;
+			}).catch(reject);
 		});
 	}
 
@@ -263,17 +266,30 @@ module.exports = new (class WikipediaAPI {
 	 *
 	 *
 	 * @param {object} params
+	 * @param {String} params.language
+	 * @param {Array<string>} params.titles
 	 * @param {String} params.action
-	 * @param {Array} params.titles
-	 * @param {String} params.pageIds
-	 * @param {Array} params.prop
-	 * @param {String} params.piprop
-	 * @param {Number} params.pithumbsize
-	 * @param {Object} params.languageLinkProperties
-	 * @param {Object} params.infoProperties
+	 * @param {Array<string>} params.prop
+	 * @param {Array<string>} params.piprop
+	 * @param {Number} pithumbsize
+	 * @param {Number} pilimit
+	 * @param {Number} exsentences
+	 * @param {0|1} exintro
+	 * @param {0|1} explaintext
+	 * @param {String} llprop
+	 * @param {String} inprop
+	 * @param {Array<Number>} pageids
+	 * @param {String} generator
+	 * @param {String} wbptterms
+	 * @param {String} gpssearch
+	 * @param {Number} gpslimit
+	 * @param {0|1} indexpageids
+	 * @param {0|1} redirects
 	 */
-	buildUrl(params) {
+	_buildUrl(params) {
 		var url = `${this.baseUrl.replace("{{language}}", params.language)}`;
+		delete params.language;
+
 		var parameters = [];
 
 		Object.entries(params).forEach(entry => {
