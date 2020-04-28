@@ -1,6 +1,7 @@
 "use strict";
 
 const https = require('https');
+const _url = require('url');
 
 module.exports = new (class HttpWrapper {
 
@@ -23,35 +24,39 @@ module.exports = new (class HttpWrapper {
     httpExecute(method, url, data) {
         return new Promise((resolve, reject) => {
 
-            let body = "";
-            let options = {
-                method: method
+            let urlParse = _url.parse(url);
+
+            let requestOptions = {
+                method: method,
+                hostname: urlParse.hostname,
+                path: urlParse.path,
+                protocol: urlParse.protocol,
             };
 
-            let req = https.request(url, options, (res) => {
-                console.log(`STATUS: ${res.statusCode}`);
-                console.log(`HEADERS: ${JSON.stringify(res.headers)}`);
-
+            function requestCallback(res) {
+                let body = "";
                 res.setEncoding('utf8');
 
                 res.on('data', (chunk) => {
-                    console.log(`BODY: ${chunk}`);
                     body += chunk;
                 });
 
                 res.on('end', () => {
                     body = JSON.parse(body);
-                    console.log(`END: ${body}`);
                     resolve(body);
                 });
-            });
+            }
 
-            req.on('error', (e) => {
+
+            let req = https.request(requestOptions, requestCallback);
+
+            req.on("error", (e) => {
                 reject(e.message);
                 console.error(`problem with request: ${e.message}`);
             });
 
             req.end();
         });
+
     }
 });
